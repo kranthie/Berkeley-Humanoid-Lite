@@ -44,3 +44,20 @@ Also, please reach out to us to tell us about your projects and how you are usin
 The code in this repository is licensed under [MIT License](https://opensource.org/license/mit). See the [LICENSE](LICENSE) file for details.
 
 Other assets are under [Creative Commons Attribution-ShareAlike 4.0 International <img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt="">](https://creativecommons.org/licenses/by-sa/4.0).
+
+
+## Citation
+
+If you find this code useful, we would appreciate if you would cite our paper:
+
+```
+@article{chi2025demonstrating,
+  title={Demonstrating Berkeley Humanoid Lite: An Open-source, Accessible, and Customizable 3D-printed Humanoid Robot},
+  author={Yufeng Chi and Qiayuan Liao and Junfeng Long and Xiaoyu Huang and Sophia Shao and Borivoje Nikolic and Zhongyu Li and Koushil Sreenath},
+  year={2025},
+  eprint={2504.17249},
+  archivePrefix={arXiv},
+  primaryClass={cs.RO},
+  url={https://arxiv.org/abs/2504.17249}, 
+}
+```
