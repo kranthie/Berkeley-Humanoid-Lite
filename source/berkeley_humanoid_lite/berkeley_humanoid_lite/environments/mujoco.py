@@ -35,9 +35,9 @@ class MujocoEnv:
 
         # Load appropriate MJCF model based on robot configuration
         if cfg.num_joints == 22:
-            self.mj_model = mujoco.MjModel.from_xml_path("source/berkeley_humanoid_lite_assets/data/mjcf/bhl_scene.xml")
+            self.mj_model = mujoco.MjModel.from_xml_path("source/berkeley_humanoid_lite_assets/data/robots/berkeley_humanoid/berkeley_humanoid_lite/mjcf/bhl_scene.xml")
         else:
-            self.mj_model = mujoco.MjModel.from_xml_path("source/berkeley_humanoid_lite_assets/data/mjcf/bhl_biped_scene.xml")
+            self.mj_model = mujoco.MjModel.from_xml_path("source/berkeley_humanoid_lite_assets/data/robots/berkeley_humanoid/berkeley_humanoid_lite/mjcf/bhl_biped_scene.xml")
 
         self.mj_data = mujoco.MjData(self.mj_model)
         self.mj_model.opt.timestep = self.cfg.physics_dt
@@ -105,9 +105,11 @@ class MujocoSimulator(MujocoEnv):
 
     Args:
         cfg (Cfg): Configuration object containing simulation parameters
+        debug (bool): Enable debug logging for gamepad commands and state
     """
-    def __init__(self, cfg: Cfg):
+    def __init__(self, cfg: Cfg, debug: bool = False):
         super().__init__(cfg)
+        self.debug = debug
         self.physics_substeps = int(np.round(self.cfg.policy_dt / self.cfg.physics_dt))
 
         # Initialize simulation parameters
@@ -136,8 +138,8 @@ class MujocoSimulator(MujocoEnv):
         self.command_velocity_y = 0.0
         self.command_velocity_yaw = 0.0
 
-        # Start joystick thread
-        self.command_controller = Se2Gamepad()
+        # Start joystick thread with debug mode
+        self.command_controller = Se2Gamepad(debug=self.debug)
         self.command_controller.run()
 
     def reset(self) -> torch.Tensor:
@@ -270,6 +272,10 @@ class MujocoSimulator(MujocoEnv):
         self.command_velocity_x = command_velocity_x
         self.command_velocity_y = command_velocity_y * 0.5
         self.command_velocity_yaw = command_velocity_yaw
+
+        # Debug: Print commands every 50 steps (when debug mode enabled)
+        if self.debug and self.n_steps % 50 == 0:
+            print(f"Step {self.n_steps}: mode={self.mode:.0f}, vx={self.command_velocity_x:.2f}, vy={self.command_velocity_y:.2f}, vyaw={self.command_velocity_yaw:.2f}")
 
         return torch.cat([
             self._get_base_quat(),

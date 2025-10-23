@@ -42,3 +42,10 @@ _isaac_sim*
 _repo
 _build
 .lastformat
+
+# MuJoCo logs
+MUJOCO_LOG.TXT
+mujoco_log.txt
+
+# Auto-generated policy configs (machine-specific paths)
+configs/policy_latest.yaml
