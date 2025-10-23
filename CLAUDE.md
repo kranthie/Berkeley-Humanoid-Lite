@@ -396,22 +396,57 @@ git submodule update --init --recursive
 
 ## Documentation
 
+### Official Documentation
 - **Official Docs**: https://berkeley-humanoid-lite.gitbook.io/docs
 - **Paper**: https://arxiv.org/abs/2504.17249
 - **Local Docs**: Run `uv run --directory .external-libs/berkeley-humanoid-lite-docs sync-docs` to download latest docs to `.external-libs/berkeley-humanoid-lite-docs/docs/`
 
+### Local Documentation (docs/ folder)
+- **[Fork and Submodules Workflow](docs/fork-and-submodules-workflow.md)** - Complete guide to working with this fork and git submodules
+- **[MuJoCo Simulation Guide](docs/mujoco-simulation-guide.md)** - Sim2sim validation with MuJoCo
+- **[Sim2Real Deployment Testing](docs/sim2real-deployment-testing.md)** - Real robot deployment checklist
+- **[Training Guide](docs/training-guide.md)** - Policy training workflow
+- **[Policies Guide](docs/policies-guide.md)** - Policy management
+
 ## Git Workflow
 
-This is a **fork** of the original HybridRobotics repository:
+This is a **fork** of the original HybridRobotics repository with **git submodules**:
 
-- **origin**: `https://github.com/kranthie/Berkeley-Humanoid-Lite.git` (your fork)
-- **upstream**: `https://github.com/HybridRobotics/Berkeley-Humanoid-Lite` (original)
+- **Main Repo**:
+  - **origin**: `https://github.com/kranthie/Berkeley-Humanoid-Lite.git` (your fork)
+  - **upstream**: `https://github.com/HybridRobotics/Berkeley-Humanoid-Lite` (original)
 
-Submodules also follow this pattern (each with origin/upstream remotes).
+- **Assets Submodule** (`source/berkeley_humanoid_lite_assets/`):
+  - **origin**: `https://github.com/kranthie/Berkeley-Humanoid-Lite-Assets.git`
+  - **upstream**: `https://github.com/HybridRobotics/Berkeley-Humanoid-Lite-Assets`
 
-To sync with upstream:
+- **Lowlevel Submodule** (`source/berkeley_humanoid_lite_lowlevel/`):
+  - **origin**: `https://github.com/kranthie/Berkeley-Humanoid-Lite-Lowlevel.git`
+  - **upstream**: `https://github.com/HybridRobotics/Berkeley-Humanoid-Lite-Lowlevel`
+
+### Quick Reference
+
 ```bash
+# Initialize submodules (first time)
+git submodule update --init --recursive
+
+# Sync with upstream
 git fetch upstream
 git merge upstream/main
 git submodule update --init --recursive
+
+# Commit workflow (submodules first, then main repo)
+cd source/berkeley_humanoid_lite_lowlevel
+git checkout main
+git add . && git commit -m "..."
+cd ../..
+git add source/berkeley_humanoid_lite_lowlevel
+git commit -m "Update submodule reference"
+
+# Push workflow (submodules first, then main repo)
+cd source/berkeley_humanoid_lite_lowlevel && git push origin main && cd ../..
+cd source/berkeley_humanoid_lite_assets && git push origin main && cd ../..
+git push origin main
 ```
+
+**⚠️ IMPORTANT**: Always commit and push submodules BEFORE the main repository. See [Fork and Submodules Workflow Guide](docs/fork-and-submodules-workflow.md) for detailed instructions, troubleshooting, and best practices.
