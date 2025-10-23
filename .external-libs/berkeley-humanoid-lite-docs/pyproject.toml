@@ -1,0 +1,19 @@
+[project]
+name = "berkeley-humanoid-lite-docs"
+version = "0.1.0"
+description = "Documentation sync tool for Berkeley Humanoid Lite GitBook"
+readme = "README.md"
+authors = [
+    { name = "Kranthi Kumar Muppala", email = "kranthi.muppala@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+]
+
+[project.scripts]
+sync-docs = "berkeley_humanoid_lite_docs.sync_docs:main"
+
+[build-system]
+requires = ["uv_build>=0.9.3,<0.10.0"]
+build-backend = "uv_build"

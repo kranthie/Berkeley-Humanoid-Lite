@@ -134,6 +134,7 @@ members = [
     "source/berkeley_humanoid_lite",
     "source/berkeley_humanoid_lite_assets",
     "source/berkeley_humanoid_lite_lowlevel",
+    ".external-libs/berkeley-humanoid-lite-docs",
 ]
 
 [[tool.uv.index]]

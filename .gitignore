@@ -1,3 +1,11 @@
+# External Libs for coding agent grounding
+# Ignore everything in .external-libs except berkeley-humanoid-lite-docs
+.external-libs/*
+!.external-libs/berkeley-humanoid-lite-docs/
+!.external-libs/berkeley-humanoid-lite-docs/**
+# But ignore the docs folder within berkeley-humanoid-lite-docs (downloaded content)
+.external-libs/berkeley-humanoid-lite-docs/docs/
+
 # Omniverse
 **/*.dmp
 **/.thumbs
