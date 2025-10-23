@@ -81,47 +81,42 @@ Demonstrated capabilities:
 
 Gemini Robotics uses a hierarchical architecture that separates reasoning from execution:
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    Gemini Robotics System                    │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  User: "Sort these objects into compost, recycling, trash" │
-│                            │                                 │
-│                            ▼                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │      Gemini Robotics-ER 1.5 (Planning)             │   │
-│  │  "High-Level Brain" - Embodied Reasoning Model     │   │
-│  ├─────────────────────────────────────────────────────┤   │
-│  │  1. Parse natural language instruction              │   │
-│  │  2. Understand scene (vision + spatial reasoning)   │   │
-│  │  3. Call tools (Google Search for local rules)      │   │
-│  │  4. Decompose into subtasks:                        │   │
-│  │     - Pick up banana peel → compost                 │   │
-│  │     - Pick up plastic bottle → recycling            │   │
-│  │     - Pick up paper → recycling                     │   │
-│  │  5. Estimate success likelihood                     │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                            │                                 │
-│                            │ Natural language instructions   │
-│                            │ (per subtask)                   │
-│                            ▼                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │     Gemini Robotics 1.5 VLA (Execution)            │   │
-│  │  "Motor Cortex" - Vision-Language-Action Model     │   │
-│  ├─────────────────────────────────────────────────────┤   │
-│  │  1. Receive: "Pick up banana peel, place in bin A" │   │
-│  │  2. Generate internal reasoning (think-before-act)  │   │
-│  │  3. Output: Joint trajectories                      │   │
-│  │  4. Execute motor commands                          │   │
-│  │  5. Monitor progress, report back to ER             │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                            │                                 │
-│                            ▼                                 │
-│                    Robot Hardware                            │
-│                 (Berkeley Humanoid Lite)                     │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    User["User Instruction:<br/>'Sort these objects into<br/>compost, recycling, trash'"]
+
+    subgraph ER["Gemini Robotics-ER 1.5 (Planning)<br/>'High-Level Brain' - Embodied Reasoning Model"]
+        ER1["1. Parse natural language instruction"]
+        ER2["2. Understand scene<br/>(vision + spatial reasoning)"]
+        ER3["3. Call tools<br/>(Google Search for local rules)"]
+        ER4["4. Decompose into subtasks:<br/>• Pick up banana peel → compost<br/>• Pick up plastic bottle → recycling<br/>• Pick up paper → recycling"]
+        ER5["5. Estimate success likelihood"]
+        ER1 --> ER2 --> ER3 --> ER4 --> ER5
+    end
+
+    Instructions["Natural language instructions<br/>(per subtask)"]
+
+    subgraph VLA["Gemini Robotics 1.5 VLA (Execution)<br/>'Motor Cortex' - Vision-Language-Action Model"]
+        VLA1["1. Receive: 'Pick up banana peel,<br/>place in bin A'"]
+        VLA2["2. Generate internal reasoning<br/>(think-before-act)"]
+        VLA3["3. Output: Joint trajectories"]
+        VLA4["4. Execute motor commands"]
+        VLA5["5. Monitor progress,<br/>report back to ER"]
+        VLA1 --> VLA2 --> VLA3 --> VLA4 --> VLA5
+    end
+
+    Robot["Robot Hardware<br/>(Berkeley Humanoid Lite)"]
+
+    User --> ER
+    ER --> Instructions
+    Instructions --> VLA
+    VLA --> Robot
+
+    style User fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style ER fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style Instructions fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style VLA fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style Robot fill:#ffebee,stroke:#c62828,stroke-width:3px
 ```
 
 ### Information Flow
@@ -516,31 +511,45 @@ Integrate ER-1.5 as a task planning layer that orchestrates your existing robot 
 
 ### Architecture Overview
 
-```
-Natural Language Command
-         │
-         ▼
-┌─────────────────────────┐
-│  Gemini ER-1.5 (Cloud)  │  ← Planning & Reasoning
-│  - Parse instruction    │
-│  - Decompose task       │
-│  - Spatial reasoning    │
-└─────────────────────────┘
-         │
-         │ Subtask sequence
-         ▼
-┌─────────────────────────┐
-│  Task Orchestrator      │  ← Berkeley Humanoid Lite (On-Robot)
-│  - Route to controller  │
-│  - Monitor progress     │
-│  - Handle failures      │
-└─────────────────────────┘
-         │
-         ├─── Locomotion ──────▶ RL Policy (Isaac Lab trained)
-         │
-         ├─── Manipulation ────▶ π0 / LeRobot (if available)
-         │
-         └─── Custom Actions ──▶ Hand-crafted controllers
+```mermaid
+flowchart TD
+    User["Natural Language<br/>Command"]
+
+    subgraph ER["Gemini ER-1.5 (Cloud)<br/>Planning & Reasoning"]
+        ER1["Parse<br/>instruction"]
+        ER2["Decompose<br/>task"]
+        ER3["Spatial<br/>reasoning"]
+        ER1 --> ER2 --> ER3
+    end
+
+    Subtasks["Subtask<br/>sequence"]
+
+    subgraph Orchestrator["Task Orchestrator<br/>Berkeley Humanoid Lite (On-Robot)"]
+        Orch1["Route to<br/>controller"]
+        Orch2["Monitor<br/>progress"]
+        Orch3["Handle<br/>failures"]
+        Orch1 --> Orch2 --> Orch3
+    end
+
+    RL["RL Policy<br/>(Isaac Lab trained)"]
+    VLA["π0 / LeRobot<br/>(if available)"]
+    Custom["Hand-crafted<br/>controllers"]
+
+    User --> ER
+    ER --> Subtasks
+    Subtasks --> Orchestrator
+
+    Orchestrator -->|"Locomotion"| RL
+    Orchestrator -->|"Manipulation"| VLA
+    Orchestrator -->|"Custom Actions"| Custom
+
+    style User fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style ER fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style Subtasks fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Orchestrator fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style RL fill:#ffebee,stroke:#c62828,stroke-width:2px
+    style VLA fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
+    style Custom fill:#e0f2f1,stroke:#00897b,stroke-width:2px
 ```
 
 ### Step 2.1: Create ER-1.5 Planning Interface
@@ -1205,38 +1214,51 @@ Combine ER-1.5, VLA (when available), and existing RL policies for optimal perfo
 
 ### System Architecture
 
-```
-User Instruction: "Clean up the kitchen"
-         │
-         ▼
-┌──────────────────────────────────┐
-│  Gemini ER-1.5 (Cloud API)       │
-│  Plan:                           │
-│  1. Walk to kitchen              │
-│  2. Scan counter for objects     │
-│  3. Pick up dirty dishes         │
-│  4. Place in sink                │
-│  5. Wipe counter                 │
-│  6. Walk back                    │
-└──────────────────────────────────┘
-         │
-         │ Subtask routing
-         ▼
-┌──────────────────────────────────┐
-│  Task Orchestrator               │
-└──────────────────────────────────┘
-         │
-         ├─ Step 1,6 (locomotion) ──────▶ RL Policy (Isaac Lab)
-         │                                 • Fast (50Hz+)
-         │                                 • Optimized for walking
-         │
-         ├─ Step 2 (perception) ─────────▶ ER-1.5 API
-         │                                 • Spatial reasoning
-         │                                 • Object detection
-         │
-         └─ Step 3,4,5 (manipulation) ───▶ Gemini VLA (or π0)
-                                           • Dexterous control
-                                           • Cross-embodiment
+```mermaid
+flowchart TD
+    User["User Instruction:<br/>'Clean up the kitchen'"]
+
+    subgraph ER["Gemini ER-1.5 (Cloud API)"]
+        Plan["Plan:<br/>1. Walk to kitchen<br/>2. Scan counter for objects<br/>3. Pick up dirty dishes<br/>4. Place in sink<br/>5. Wipe counter<br/>6. Walk back"]
+    end
+
+    Routing["Subtask<br/>routing"]
+
+    Orchestrator["Task<br/>Orchestrator"]
+
+    subgraph Exec1["RL Policy (Isaac Lab)"]
+        RL1["Step 1, 6<br/>(locomotion)"]
+        RL2["• Fast (50Hz+)<br/>• Optimized for walking"]
+        RL1 --> RL2
+    end
+
+    subgraph Exec2["ER-1.5 API"]
+        ER2_1["Step 2<br/>(perception)"]
+        ER2_2["• Spatial reasoning<br/>• Object detection"]
+        ER2_1 --> ER2_2
+    end
+
+    subgraph Exec3["Gemini VLA (or π0)"]
+        VLA1["Step 3, 4, 5<br/>(manipulation)"]
+        VLA2["• Dexterous control<br/>• Cross-embodiment"]
+        VLA1 --> VLA2
+    end
+
+    User --> ER
+    ER --> Routing
+    Routing --> Orchestrator
+
+    Orchestrator --> Exec1
+    Orchestrator --> Exec2
+    Orchestrator --> Exec3
+
+    style User fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style ER fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style Routing fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Orchestrator fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style Exec1 fill:#ffebee,stroke:#c62828,stroke-width:2px
+    style Exec2 fill:#fff3e0,stroke:#ff6f00,stroke-width:2px
+    style Exec3 fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
 ```
 
 ### Deployment Script

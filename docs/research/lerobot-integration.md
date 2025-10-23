@@ -50,30 +50,48 @@ Transform Berkeley Humanoid Lite from RL-based policies to **imitation learning*
 
 ### Architecture Overview
 
-```
-Human Demonstration (Teleoperation)
-         ↓
-    Record:
-    ├─ Camera Images (RGB)
-    ├─ Robot State (joint positions, velocities)
-    └─ Actions (what human commanded)
-         ↓
-    LeRobot Dataset
-         ↓
-┌─────────────────────────────────────┐
-│       Train Policy Model             │
-│   (ACT, Diffusion, TDMPC, etc.)     │
-│                                      │
-│  Input: Camera + Robot State        │
-│  Output: Actions                     │
-└─────────────────────────────────────┘
-         ↓
-    Trained Policy
-         ↓
-    Deploy on Robot
-    ├─ Sees environment (camera)
-    ├─ Senses state (joints, IMU)
-    └─ Outputs actions (joint commands)
+```mermaid
+flowchart TD
+    subgraph Demo["Human Demonstration (Teleoperation)"]
+        Teleop["Operator controls<br/>robot via interface"]
+    end
+
+    subgraph Record["Record Episode Data"]
+        Camera["Camera Images<br/>(RGB @ 30 FPS)"]
+        State["Robot State<br/>(joint positions, velocities)"]
+        Actions["Actions<br/>(commanded positions)"]
+    end
+
+    Dataset["LeRobot Dataset<br/>(Parquet + MP4)"]
+
+    subgraph Train["Train Policy Model"]
+        Model["ACT / Diffusion /<br/>TDMPC / VQ-BeT"]
+        IO["Input: Camera + Robot State<br/>Output: Actions"]
+        Model --> IO
+    end
+
+    Policy["Trained Policy<br/>(Checkpoint)"]
+
+    subgraph Deploy["Deploy on Robot"]
+        See["Sees environment<br/>(camera input)"]
+        Sense["Senses state<br/>(joints, IMU)"]
+        Output["Outputs actions<br/>(joint commands)"]
+        See --> Output
+        Sense --> Output
+    end
+
+    Demo --> Record
+    Record --> Dataset
+    Dataset --> Train
+    Train --> Policy
+    Policy --> Deploy
+
+    style Demo fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style Record fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style Dataset fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Train fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style Policy fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
+    style Deploy fill:#ffebee,stroke:#c62828,stroke-width:3px
 ```
 
 ### Expected Timeline
@@ -1385,12 +1403,21 @@ Best of all worlds:
 3. **Groot N1 for coordination** → Language commands, multi-task
 
 Example workflow:
-```
-User: "Walk to the table and wave"
-  ↓
-Use RL policy for walking (fast, robust)
-  ↓
-Use LeRobot policy for arm waving (taught via demo)
+```mermaid
+flowchart TD
+    User["User Command:<br/>'Walk to the table and wave'"]
+    Parse["Parse command<br/>into subtasks"]
+    Walk["Use RL policy<br/>for walking<br/>(fast, robust)"]
+    Wave["Use LeRobot policy<br/>for arm waving<br/>(taught via demo)"]
+
+    User --> Parse
+    Parse --> Walk
+    Walk --> Wave
+
+    style User fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style Parse fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Walk fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Wave fill:#ffebee,stroke:#c62828,stroke-width:2px
 ```
 
 ## Next Steps

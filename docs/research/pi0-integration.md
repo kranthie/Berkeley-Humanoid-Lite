@@ -133,45 +133,48 @@ gs://openpi-assets/checkpoints/pi05_base
 
 ### High-Level Design
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   π0 Architecture                   │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  ┌─────────────┐    ┌──────────────────────────┐  │
-│  │   Camera    │───▶│   Vision Encoder         │  │
-│  │  (RGB img)  │    │  (PaliGemma SigLIP)      │  │
-│  └─────────────┘    └──────────┬───────────────┘  │
-│                                 │                   │
-│  ┌─────────────┐                │                   │
-│  │  Language   │───────────────▶│                   │
-│  │ Instruction │                │                   │
-│  └─────────────┘                │                   │
-│                                 ▼                   │
-│  ┌─────────────┐    ┌──────────────────────────┐  │
-│  │    Joint    │───▶│   VLM Backbone (3B)      │  │
-│  │   States    │    │  (PaliGemma Gemma-2B)    │  │
-│  └─────────────┘    └──────────┬───────────────┘  │
-│                                 │                   │
-│                                 ▼                   │
-│                     ┌──────────────────────────┐  │
-│                     │  Action Expert (300M)    │  │
-│                     │ (Bidirectional Attention)│  │
-│                     └──────────┬───────────────┘  │
-│                                 │                   │
-│                                 ▼                   │
-│                     ┌──────────────────────────┐  │
-│                     │   Flow Matching Head     │  │
-│                     │  (Action Generation)     │  │
-│                     └──────────┬───────────────┘  │
-│                                 │                   │
-│                                 ▼                   │
-│                     ┌──────────────────────────┐  │
-│                     │  Action Chunk (H=50)     │  │
-│                     │  [a_t, ..., a_t+49]      │  │
-│                     └──────────────────────────┘  │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Inputs["Input Modalities"]
+        Camera["Camera<br/>(RGB Image)"]
+        Language["Language<br/>Instruction"]
+        Joints["Joint States<br/>(Proprioception)"]
+    end
+
+    subgraph Encoders["Multimodal Encoders"]
+        VisionEnc["Vision Encoder<br/>(PaliGemma SigLIP)"]
+        LangProc["Language Processing<br/>(Gemma-2B Tokenizer)"]
+    end
+
+    subgraph Backbone["VLM Backbone (3B params)"]
+        VLM["PaliGemma VLM<br/>(Vision-Language-Motor Fusion)<br/>Cross-modal Attention"]
+    end
+
+    subgraph ActionGen["Action Generation Pipeline"]
+        Expert["Action Expert (300M)<br/>Bidirectional Attention<br/>Robot-Specific Control"]
+        FlowHead["Flow Matching Head<br/>(Continuous Action Generation)"]
+        Chunk["Action Chunk (H=50)<br/>[a_t, a_t+1, ..., a_t+49]"]
+    end
+
+    Output["Joint Position Commands<br/>(22 DOF @ 50 Hz)"]
+
+    Camera --> VisionEnc
+    Language --> LangProc
+
+    VisionEnc --> VLM
+    LangProc --> VLM
+    Joints --> VLM
+
+    VLM --> Expert
+    Expert --> FlowHead
+    FlowHead --> Chunk
+    Chunk --> Output
+
+    style Inputs fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style Encoders fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style Backbone fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px
+    style ActionGen fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style Output fill:#ffebee,stroke:#c62828,stroke-width:3px
 ```
 
 ### Component Details

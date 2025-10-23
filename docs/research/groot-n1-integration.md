@@ -33,32 +33,52 @@ Transform Berkeley Humanoid Lite from task-specific RL policies to a generalist 
 
 ### Architecture Overview
 
-```
-Human Input
-    ├─ Language: "Walk to the red object"
-    └─ (Optional) Demonstrations
-         ↓
-    Camera Input (RGB)
-         ↓
-    Robot Proprioception (joint states, IMU)
-         ↓
-┌──────────────────────────────────────┐
-│        Groot N1 Foundation Model      │
-│                                       │
-│  System 2 (Slow Thinking)            │
-│  ├─ Vision-Language Reasoning        │
-│  ├─ Task Planning                    │
-│  └─ High-level Decision Making       │
-│         ↓                             │
-│  System 1 (Fast Thinking)            │
-│  ├─ Action Diffusion Transformer     │
-│  ├─ Real-time Motor Control          │
-│  └─ Smooth Trajectory Generation     │
-└──────────────────────────────────────┘
-         ↓
-    Joint Position Commands (22 DOF)
-         ↓
-    Robot Executes @ 10 Hz
+```mermaid
+flowchart TD
+    subgraph Input["Human Input"]
+        Lang["Language:<br/>'Walk to the red object'"]
+        Demo["(Optional)<br/>Demonstrations"]
+    end
+
+    Camera["Camera Input<br/>(RGB)"]
+    Proprio["Robot Proprioception<br/>(joint states, IMU)"]
+
+    subgraph Groot["Groot N1 Foundation Model"]
+        subgraph Sys2["System 2 (Slow Thinking)"]
+            VLR["Vision-Language<br/>Reasoning"]
+            TP["Task<br/>Planning"]
+            HDM["High-level<br/>Decision Making"]
+            VLR --> TP --> HDM
+        end
+
+        subgraph Sys1["System 1 (Fast Thinking)"]
+            ADT["Action Diffusion<br/>Transformer"]
+            RMC["Real-time<br/>Motor Control"]
+            STG["Smooth Trajectory<br/>Generation"]
+            ADT --> RMC --> STG
+        end
+
+        Sys2 --> Sys1
+    end
+
+    Commands["Joint Position Commands<br/>(22 DOF)"]
+    Exec["Robot Executes<br/>@ 10 Hz"]
+
+    Input --> Camera
+    Input --> Proprio
+    Camera --> Groot
+    Proprio --> Groot
+    Groot --> Commands
+    Commands --> Exec
+
+    style Input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Camera fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Proprio fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Groot fill:#ffebee,stroke:#c62828,stroke-width:3px
+    style Sys2 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Sys1 fill:#e0f2f1,stroke:#00897b,stroke-width:2px
+    style Commands fill:#fff59d,stroke:#f57f17,stroke-width:2px
+    style Exec fill:#ff6b6b,stroke:#c92a2a,stroke-width:2px
 ```
 
 ### Expected Timeline
@@ -943,22 +963,36 @@ python scripts/groot/evaluate_model.py \
 
 ### Architecture
 
-```
-Berkeley Humanoid Lite
-├─ Camera (streams video @ 30 FPS)
-├─ IMU + Joint Encoders (publishes state @ 250 Hz)
-└─ Motor Controllers (receives commands @ 250 Hz)
-         │
-         │ WiFi/Ethernet
-         ↓
-Development Workstation (RTX PRO 6000)
-├─ Receives: Video + Robot State
-├─ Runs: Groot N1 @ 10 Hz
-└─ Sends: Joint Commands
-         │
-         ↓
-Robot Low-Level Controller
-└─ Interpolates commands 250 Hz → Motors
+```mermaid
+flowchart TD
+    subgraph Robot["Berkeley Humanoid Lite"]
+        Camera["Camera<br/>(streams video @ 30 FPS)"]
+        Sensors["IMU + Joint Encoders<br/>(publishes state @ 250 Hz)"]
+        Motors["Motor Controllers<br/>(receives commands @ 250 Hz)"]
+    end
+
+    Network["WiFi/Ethernet"]
+
+    subgraph Workstation["Development Workstation (RTX PRO 6000)"]
+        Receive["Receives:<br/>Video + Robot State"]
+        Groot["Runs:<br/>Groot N1 @ 10 Hz"]
+        Send["Sends:<br/>Joint Commands"]
+        Receive --> Groot --> Send
+    end
+
+    subgraph LowLevel["Robot Low-Level Controller"]
+        Interp["Interpolates commands<br/>250 Hz → Motors"]
+    end
+
+    Robot --> Network
+    Network --> Workstation
+    Workstation --> LowLevel
+    LowLevel --> Motors
+
+    style Robot fill:#ffebee,stroke:#c62828,stroke-width:3px
+    style Network fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Workstation fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style LowLevel fill:#fff3e0,stroke:#f57c00,stroke-width:2px
 ```
 
 ### Setup Network Communication
@@ -1407,14 +1441,21 @@ Use **both**:
 2. **Groot N1 for manipulation/vision**: Language-conditioned, flexible
 
 Example:
-```
-User: "Walk to the table and pick up the cup"
-  ↓
-Groot N1 System 2: Parse command, plan approach
-  ↓
-Use RL policy for walking to table
-  ↓
-Switch to Groot N1 for vision-based grasping
+```mermaid
+flowchart TD
+    User["User:<br/>'Walk to the table and<br/>pick up the cup'"]
+    Parse["Groot N1 System 2:<br/>Parse command,<br/>plan approach"]
+    Walk["Use RL policy<br/>for walking to table"]
+    Grasp["Switch to Groot N1<br/>for vision-based<br/>grasping"]
+
+    User --> Parse
+    Parse --> Walk
+    Walk --> Grasp
+
+    style User fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style Parse fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Walk fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Grasp fill:#ffebee,stroke:#c62828,stroke-width:2px
 ```
 
 ## Next Steps

@@ -37,24 +37,41 @@ Complete guide for replacing the Berkeley Humanoid Lite's onboard Intel N95 mini
 ### Current vs New Architecture
 
 **Current (Intel N95):**
-```
-Intel N95 Mini PC (x86_64)
-├── Ubuntu 22.04
-├── Python 3.11
-├── ONNX Runtime (CPU)
-├── 4x USB-CAN adapters
-└── USB IMU (Arduino)
+```mermaid
+graph TD
+    A["Intel N95 Mini PC<br/>(x86_64)"]
+    A --> B["Ubuntu 22.04"]
+    A --> C["Python 3.11"]
+    A --> D["ONNX Runtime (CPU)"]
+    A --> E["4x USB-CAN adapters"]
+    A --> F["USB IMU (Arduino)"]
+
+    style A fill:#ff6b6b,stroke:#c92a2a,stroke-width:2px,color:#fff
+    style B fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style C fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    style D fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    style E fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    style F fill:#e0f2f1,stroke:#009688,stroke-width:2px
 ```
 
 **New (Jetson Orin Nano Super):**
-```
-Jetson Orin Nano Super (ARM64)
-├── Ubuntu 20.04/22.04 (JetPack 6.x)
-├── Python 3.10/3.11
-├── ONNX Runtime GPU
-├── CUDA 12.x + TensorRT
-├── 4x USB-CAN adapters (same)
-└── USB IMU (same)
+```mermaid
+graph TD
+    A["Jetson Orin Nano Super<br/>(ARM64)"]
+    A --> B["Ubuntu 20.04/22.04<br/>(JetPack 6.x)"]
+    A --> C["Python 3.10/3.11"]
+    A --> D["ONNX Runtime GPU"]
+    A --> G["CUDA 12.x + TensorRT"]
+    A --> E["4x USB-CAN adapters<br/>(same)"]
+    A --> F["USB IMU<br/>(same)"]
+
+    style A fill:#76ff03,stroke:#33691e,stroke-width:3px,color:#000
+    style B fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style C fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    style D fill:#fff59d,stroke:#f57f17,stroke-width:2px
+    style G fill:#fff59d,stroke:#f57f17,stroke-width:2px
+    style E fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    style F fill:#e0f2f1,stroke:#009688,stroke-width:2px
 ```
 
 ## Hardware Requirements
