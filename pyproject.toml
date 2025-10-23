@@ -3,16 +3,16 @@ name = "berkeley-humanoid-lite-workspace"
 version = "1.1.0"
 description = "Workspace for Berkeley Humanoid Lite"
 readme = "README.md"
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
-  "torch==2.5.1",
-  "torchvision==0.20.1",
-  "isaacsim[all,extscache]==4.5.0",
-  "isaaclab[isaacsim,all]==2.1.0",
+  "torch==2.7.0",
+  "torchvision==0.22.0",
+  "isaacsim[all,extscache]==5.0.0",
+  "isaaclab[isaacsim,all]==2.2.0",
   "numpy",
   "omegaconf",
   "mujoco",
-  "onnxruntime",
+  "onnxruntime-gpu>=1.22.0",
   "cc.udp",
   "inputs",
   "pyaml",
@@ -37,7 +37,7 @@ build-backend = "setuptools.build_meta"
 atomic = true
 profile = "black"
 line_length = 120
-py_version = 310
+py_version = 311
 skip_glob = ["docs/*", "logs/*"]
 group_by_package = true
 
@@ -100,7 +100,7 @@ exclude = [
 ]
 
 typeCheckingMode = "basic"
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "Linux"
 enableTypeIgnoreComments = true
 
@@ -140,7 +140,7 @@ members = [
 [[tool.uv.index]]
 
 name = "pytorch"
-url = "https://download.pytorch.org/whl/cu121"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [[tool.uv.index]]

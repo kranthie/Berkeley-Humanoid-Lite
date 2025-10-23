@@ -73,7 +73,7 @@ flake8 .
 # Organize imports (Black-compatible, custom Isaac Lab section)
 isort .
 
-# Type checking (basic mode, Python 3.10)
+# Type checking (basic mode, Python 3.11)
 pyright
 ```
 
@@ -95,11 +95,11 @@ docker exec -it <container-name> bash
 This is a **uv workspace** with unified dependency management across all submodules. The root `pyproject.toml` defines workspace members and shared dependencies (PyTorch, Isaac Sim, Isaac Lab, etc.).
 
 **Critical Dependencies**:
-- Python 3.10 (fixed requirement for Isaac Sim/Isaac Lab)
-- PyTorch 2.5.1 with CUDA 12.1
-- Isaac Sim 4.5.0 & Isaac Lab 2.1.0
+- Python 3.11 (required for Isaac Sim 5.0 / Isaac Lab 2.2)
+- PyTorch 2.7.0 with CUDA 12.8 (supports Blackwell GPU architecture)
+- Isaac Sim 5.0.0 & Isaac Lab 2.2.0
 - MuJoCo (for deployment simulation)
-- ONNX Runtime (for policy inference)
+- ONNX Runtime GPU 1.22.0+ (for GPU-accelerated policy inference)
 
 ### Manager-Based RL Environment Pattern
 
@@ -375,8 +375,9 @@ data/robots/berkeley_humanoid/berkeley_humanoid_lite/
 ## Troubleshooting
 
 ### GPU/CUDA Issues
-- Ensure CUDA 12.1 is installed (required by PyTorch 2.5.1)
+- Ensure CUDA 12.8 is installed (required by PyTorch 2.7.0)
 - Isaac Sim requires GPU with compute capability ≥ 7.0
+- Blackwell GPUs (sm_120) now supported with PyTorch 2.7.0+
 
 ### Import Errors
 - Run `uv sync` to ensure all workspace members are installed
