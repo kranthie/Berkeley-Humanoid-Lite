@@ -36,21 +36,160 @@ This guide provides a comprehensive checklist for deploying trained policies to 
 ### On-board Computer Setup
 
 - [ ] Ubuntu 22.04 installed
-- [ ] Dependencies installed: `build-essential`, `cmake`, `net-tools`, `can-utils`, `python3-pip`
-- [ ] Repository cloned and updated
-- [ ] Python environment set up (`uv` or `conda`)
+- [ ] Dependencies installed: `build-essential`, `cmake`, `net-tools`, `can-utils`, `python3-pip`, `libboost-all-dev`
+- [ ] uv package manager installed
+- [ ] Repository cloned and submodules initialized
+- [ ] C codebase built successfully
+- [ ] Python environment set up with `uv sync`
 - [ ] CAN transports script tested: `source ./scripts/start_can_transports.sh`
+
+## On-board Computer Initial Setup
+
+This section covers the one-time setup of the on-board computer. Skip to [Deployment Steps](#deployment-steps) if your on-board computer is already configured.
+
+### 1. Install Ubuntu 22.04
+
+Follow the [Ubuntu installation tutorial](https://ubuntu.com/tutorials/install-ubuntu-desktop#1-overview) to install Ubuntu 22.04 on the on-board computer (NUC or similar).
+
+### 2. Install System Dependencies
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake net-tools can-utils python3-pip libboost-all-dev
+```
+
+**Key dependencies:**
+- `build-essential` - C/C++ compiler toolchain
+- `cmake` - Build system for C codebase
+- `net-tools` - Network utilities
+- `can-utils` - CAN bus utilities for motor communication
+- `python3-pip` - Python package installer
+- `libboost-all-dev` - Boost C++ libraries (required for C codebase)
+
+### 3. Install uv Package Manager
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+After installation, restart your terminal or run:
+```bash
+source $HOME/.local/bin/env
+```
+
+Verify installation:
+```bash
+uv --version
+```
+
+### 4. Clone Repository and Initialize Submodules
+
+```bash
+cd ~
+mkdir -p Projects
+cd Projects
+git clone https://github.com/YOUR_USERNAME/Berkeley-Humanoid-Lite.git
+cd Berkeley-Humanoid-Lite
+git submodule update --init --recursive
+```
+
+**Important:** Replace `YOUR_USERNAME` with your GitHub username if using a fork.
+
+### 5. Build C Codebase
+
+The C codebase provides real-time control with better performance for locomotion tasks.
+
+```bash
+cd source/berkeley_humanoid_lite_lowlevel
+make clean
+make
+```
+
+**Expected output:** Executable created at `build/main`
+
+Verify the build:
+```bash
+ls -lh build/main
+file build/main
+```
+
+### 6. Set Up Python Environment
+
+Set up Python dependencies for the lowlevel module:
+
+```bash
+cd source/berkeley_humanoid_lite_lowlevel
+uv sync
+```
+
+This will:
+- Download Python 3.11 (if not already installed)
+- Create a virtual environment at `../../.venv`
+- Install all required dependencies (onnxruntime, python-can, inputs, etc.)
+
+**Expected output:** All packages installed successfully
+
+Verify the setup:
+```bash
+uv run python -c "from berkeley_humanoid_lite_lowlevel.policy.gamepad import Se2Gamepad; print('Setup successful')"
+```
+
+### 7. Test CAN Transports (Hardware Required)
+
+**Note:** This step requires the robot hardware to be connected.
+
+```bash
+cd ~/Projects/Berkeley-Humanoid-Lite
+source ./scripts/start_can_transports.sh
+```
+
+Verify CAN interfaces are up:
+```bash
+ip link show can0
+ip link show can1
+ip link show can2
+ip link show can3
+```
+
+To stop CAN transports:
+```bash
+source ./scripts/stop_can_transports.sh
+```
+
+### 8. Setup Verification Summary
+
+Confirm all components are ready:
+
+- [ ] C binary exists: `~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel/build/main`
+- [ ] Python modules import correctly
+- [ ] CAN interfaces activate without errors
+- [ ] Virtual environment created at `~/Projects/Berkeley-Humanoid-Lite/.venv`
 
 ## Deployment Steps
 
 ### Step 1: Copy Policy Files to Robot
 
-Transfer the trained policy and configuration to the on-board computer:
+Transfer the trained policy and configuration to the on-board computer's lowlevel submodule:
 
 ```bash
-# On development machine
-scp configs/policy_latest.yaml robot@nuc:/path/to/repo/configs/
-scp logs/rsl_rl/humanoid/YYYY-MM-DD_HH-MM-SS/exported/policy.onnx robot@nuc:/path/to/repo/checkpoints/
+# On development machine, from repository root
+scp configs/policy_latest.yaml robot@nuc:~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel/configs/
+
+# Find your latest exported policy and copy it
+scp logs/rsl_rl/humanoid/YYYY-MM-DD_HH-MM-SS/exported/policy.onnx robot@nuc:~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel/checkpoints/
+```
+
+**Notes:**
+- Replace `robot@nuc` with your actual username and hostname
+- Replace `YYYY-MM-DD_HH-MM-SS` with your training run timestamp
+- Policy files must go to the **lowlevel submodule**, not the main repository directory
+- Both C and Python codebases load policies from the lowlevel submodule
+
+Verify files were copied:
+```bash
+# On robot
+ls -lh ~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel/configs/policy_latest.yaml
+ls -lh ~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel/checkpoints/policy.onnx
 ```
 
 ### Step 2: Verify Motor Connections
@@ -90,19 +229,39 @@ Expected output: Joystick readings when moving sticks and pressing buttons.
 
 ### Step 5: Run Policy on Robot
 
-#### Using C Codebase (Recommended for Locomotion)
-
+**Before running**, ensure CAN transports are started:
 ```bash
-cd csrc/
-make
-./build/real_humanoid
+source ~/Projects/Berkeley-Humanoid-Lite/scripts/start_can_transports.sh
 ```
 
-#### Using Python Codebase
+#### Using C Codebase (Recommended for Locomotion)
+
+The C codebase provides real-time control with better performance guarantees.
 
 ```bash
-cd source/berkeley_humanoid_lite_lowlevel/
+cd ~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel
+./build/main
+```
+
+**Expected behavior:**
+- Robot starts in idle mode (motors relaxed)
+- Gamepad controls robot movement (see Testing Procedures below)
+- Policy runs at ~25 Hz, motor control at ~250 Hz
+
+#### Using Python Codebase (Alternative)
+
+The Python codebase is easier to modify but may have slightly lower performance.
+
+```bash
+cd ~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel
 uv run ./scripts/python/run_locomotion.py
+```
+
+**Note:** If you rebuild the C codebase after changes, run `make` first:
+```bash
+cd ~/Projects/Berkeley-Humanoid-Lite/source/berkeley_humanoid_lite_lowlevel
+make
+./build/main
 ```
 
 ## Testing Procedures
@@ -418,6 +577,15 @@ Please document your findings:
 
 ### 2025-10-23
 - Initial deployment testing guide created
+- Added comprehensive on-board computer initial setup section
+  - System dependencies installation (including Boost libraries)
+  - uv package manager installation and usage
+  - Repository cloning and submodule initialization
+  - C codebase build instructions
+  - Python environment setup with uv sync
+  - CAN transport testing
+- Fixed policy file deployment paths (to lowlevel submodule)
+- Added detailed deployment steps with correct paths
 - Added gamepad controller verification as open item
 - Documented recent gamepad refactoring changes
 - Added legacy_mode fallback instructions
